@@ -1,3 +1,5 @@
+import '../utils/moeda_utils.dart';
+
 class ContaBancaria {
   final String id;
   final String userId; // ID do usuário proprietário
@@ -60,8 +62,11 @@ class ContaBancaria {
     );
   }
 
+  // Getter para saldo formatado no padrão brasileiro
+  String get saldoFormatado => MoedaUtils.formatarMoeda(saldo);
+
   @override
   String toString() {
-    return 'ContaBancaria{id: $id, nome: $nome, banco: $banco, saldo: R\$ ${saldo.toStringAsFixed(2)}}';
+    return 'ContaBancaria{id: $id, nome: $nome, banco: $banco, saldo: $saldoFormatado}';
   }
 }

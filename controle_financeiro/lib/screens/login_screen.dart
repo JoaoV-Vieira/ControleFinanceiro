@@ -103,17 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               
-              const SizedBox(height: 8),
-              
-              const Text(
-                'Gerencie suas finanças de forma simples',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              
-              const SizedBox(height: 50),
+              const SizedBox(height: 20),
 
               // Card com formulário
               Card(
@@ -263,24 +253,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Texto de demo
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.amber.shade200),
-                          ),
-                          child: const Text(
-                            '💡 Demo: Use qualquer email e senha válidos para entrar',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.amber,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
                       ],
                     ),
                   ),

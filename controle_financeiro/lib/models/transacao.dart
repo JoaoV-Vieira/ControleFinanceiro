@@ -1,3 +1,5 @@
+import '../utils/moeda_utils.dart';
+
 enum TipoTransacao { entrada, saida }
 
 class Transacao {
@@ -61,10 +63,9 @@ class Transacao {
     );
   }
 
-  // Getter para exibir o valor formatado
+  // Getter para exibir o valor formatado no padrão brasileiro
   String get valorFormatado {
-    String sinal = tipo == TipoTransacao.entrada ? '+' : '-';
-    return '$sinal R\$ ${valor.toStringAsFixed(2)}';
+    return MoedaUtils.formatarTransacao(valor, isEntrada);
   }
 
   // Getter para cor baseada no tipo

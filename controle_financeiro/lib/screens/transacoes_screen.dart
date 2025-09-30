@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/transacao.dart';
 import '../models/conta_bancaria.dart';
 import '../services/data_service.dart';
+import '../utils/moeda_utils.dart';
 import 'adicionar_transacao_screen.dart';
 
 class TransacoesScreen extends StatefulWidget {
@@ -110,7 +111,7 @@ class _TransacoesScreenState extends State<TransacoesScreen> {
                               ),
                             ),
                             Text(
-                              'R\$ ${saldoTotal.toStringAsFixed(2)}',
+                              MoedaUtils.formatarMoeda(saldoTotal),
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -134,7 +135,7 @@ class _TransacoesScreenState extends State<TransacoesScreen> {
                             const Icon(Icons.arrow_upward, color: Colors.green),
                             const Text('Entradas'),
                             Text(
-                              'R\$ ${entradasMes.toStringAsFixed(2)}',
+                              MoedaUtils.formatarMoeda(entradasMes),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
@@ -149,7 +150,7 @@ class _TransacoesScreenState extends State<TransacoesScreen> {
                             const Icon(Icons.arrow_downward, color: Colors.red),
                             const Text('Saídas'),
                             Text(
-                              'R\$ ${saidasMes.toStringAsFixed(2)}',
+                              MoedaUtils.formatarMoeda(saidasMes),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,

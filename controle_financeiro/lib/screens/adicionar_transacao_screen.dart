@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/transacao.dart';
 import '../models/conta_bancaria.dart';
+import '../utils/moeda_utils.dart';
+import '../utils/moeda_input_formatter.dart';
 
 class AdicionarTransacaoScreen extends StatefulWidget {
   final List<ContaBancaria> contas;
@@ -88,7 +89,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
       final transacao = Transacao.nova(
         contaId: _contaSelecionada!,
         descricao: _descricaoController.text.trim(),
-        valor: double.parse(_valorController.text.replaceAll(',', '.')),
+        valor: MoedaUtils.stringParaDouble(_valorController.text) ?? 0.0,
         tipo: _tipoTransacao,
         categoria: _categoriaSelecionada ?? _categorias.first,
         data: _dataSelecionada,
@@ -194,12 +195,12 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
                 controller: _valorController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+                  MoedaBrasileiraInputFormatter(),
                 ],
                 decoration: InputDecoration(
                   labelText: 'Valor',
-                  hintText: '0,00',
-                  prefixText: 'R\$ ',
+                  hintText: '1.234,56',
+                  helperText: 'Use vírgula para decimais (ex: 1.234,56)',
                   prefixIcon: Icon(
                     Icons.attach_money,
                     color: _tipoTransacao == TipoTransacao.entrada 
@@ -213,13 +214,12 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
                     return 'Por favor, digite o valor';
                   }
                   
-                  try {
-                    final valor = double.parse(value.replaceAll(',', '.'));
-                    if (valor <= 0) {
-                      return 'O valor deve ser maior que zero';
-                    }
-                  } catch (e) {
-                    return 'Digite um valor válido';
+                  final valor = MoedaUtils.stringParaDouble(value);
+                  if (valor == null) {
+                    return 'Digite um valor válido (ex: 1.234,56)';
+                  }
+                  if (valor <= 0) {
+                    return 'O valor deve ser maior que zero';
                   }
                   
                   return null;
@@ -230,7 +230,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
 
               // Dropdown Conta
               DropdownButtonFormField<String>(
-                value: _contaSelecionada,
+                initialValue: _contaSelecionada,
                 decoration: const InputDecoration(
                   labelText: 'Conta',
                   prefixIcon: Icon(Icons.account_balance),
@@ -259,7 +259,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
 
               // Dropdown Categoria
               DropdownButtonFormField<String>(
-                value: _categoriaSelecionada,
+                initialValue: _categoriaSelecionada,
                 decoration: const InputDecoration(
                   labelText: 'Categoria',
                   prefixIcon: Icon(Icons.category),

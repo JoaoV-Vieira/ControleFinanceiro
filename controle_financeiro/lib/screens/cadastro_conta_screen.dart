@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/conta_bancaria.dart';
 import '../services/data_service.dart';
+import '../utils/moeda_utils.dart';
+import '../utils/moeda_input_formatter.dart';
 
 class CadastroContaScreen extends StatefulWidget {
   const CadastroContaScreen({super.key});
@@ -54,7 +55,7 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
         userId: 'user1', // Por enquanto um ID fixo
         nome: _nomeController.text.trim(),
         banco: banco,
-        saldo: double.parse(_saldoController.text.replaceAll(',', '.')),
+        saldo: MoedaUtils.stringParaDouble(_saldoController.text) ?? 0.0,
       );
 
       // Adicionar usando o serviço
@@ -144,7 +145,7 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
 
               // Dropdown Banco
               DropdownButtonFormField<String>(
-                value: _bancoSelecionado,
+                initialValue: _bancoSelecionado,
                 decoration: const InputDecoration(
                   labelText: 'Banco',
                   prefixIcon: Icon(Icons.business),
@@ -203,12 +204,12 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
                 controller: _saldoController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+                  MoedaBrasileiraInputFormatter(),
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Saldo inicial',
-                  hintText: '0,00',
-                  prefixText: 'R\$ ',
+                  hintText: '1.234,56',
+                  helperText: 'Use vírgula para decimais (ex: 1.234,56)',
                   prefixIcon: Icon(Icons.attach_money),
                   border: OutlineInputBorder(),
                 ),
@@ -217,10 +218,9 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
                     return 'Por favor, digite o saldo inicial';
                   }
                   
-                  try {
-                    double.parse(value.replaceAll(',', '.'));
-                  } catch (e) {
-                    return 'Digite um valor válido';
+                  final valor = MoedaUtils.stringParaDouble(value);
+                  if (valor == null) {
+                    return 'Digite um valor válido (ex: 1.234,56)';
                   }
                   
                   return null;
