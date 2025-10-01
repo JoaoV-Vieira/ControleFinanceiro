@@ -45,31 +45,41 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
     super.dispose();
   }
 
-  void _adicionarConta() {
+  void _adicionarConta() async {
     if (_formKey.currentState!.validate()) {
-      final banco = _mostrarCampoOutroBanco 
+      final nomeBanco = _mostrarCampoOutroBanco 
           ? _bancoController.text.trim() 
           : _bancoSelecionado!;
       
       final conta = ContaBancaria.nova(
-        userId: 'user1', // Por enquanto um ID fixo
-        nome: _nomeController.text.trim(),
-        banco: banco,
+        usuarioId: 1, // Por enquanto um ID fixo
+        nomeBanco: nomeBanco,
+        tipoConta: _nomeController.text.trim(),
         saldo: MoedaUtils.stringParaDouble(_saldoController.text) ?? 0.0,
       );
 
       // Adicionar usando o serviço
-      _dataService.adicionarConta(conta);
+      final sucesso = await _dataService.adicionarConta(conta);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Conta adicionada com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Navegar para tela de transações
-      Navigator.pushReplacementNamed(context, '/transacoes');
+      if (mounted) {
+        if (sucesso) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Conta adicionada com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Navegar para tela de transações
+          Navigator.pushReplacementNamed(context, '/transacoes');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erro ao salvar conta'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 

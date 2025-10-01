@@ -1,52 +1,47 @@
 import '../utils/moeda_utils.dart';
 
 class ContaBancaria {
-  final String id;
-  final String userId; // ID do usuário proprietário
-  final String nome;
-  final String banco;
+  final int? id; // Pode ser null para novas contas (auto-increment do SQLite)
+  final int usuarioId; // ID do usuário proprietário
+  final String nomeBanco;
+  final String tipoConta;
   final double saldo;
-  final DateTime dataCriacao;
 
   ContaBancaria({
-    required this.id,
-    required this.userId,
-    required this.nome,
-    required this.banco,
+    this.id,
+    required this.usuarioId,
+    required this.nomeBanco,
+    required this.tipoConta,
     required this.saldo,
-    required this.dataCriacao,
   });
 
-  // Construtor para criar uma nova conta
+  // Construtor para criar uma nova conta (sem ID)
   ContaBancaria.nova({
-    required this.userId,
-    required this.nome,
-    required this.banco,
+    required this.usuarioId,
+    required this.nomeBanco,
+    required this.tipoConta,
     required this.saldo,
-  }) : id = DateTime.now().millisecondsSinceEpoch.toString(),
-       dataCriacao = DateTime.now();
+  }) : id = null;
 
-  // Converte para Map
+  // Converte para Map (compatível com SQLite)
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'userId': userId,
-      'nome': nome,
-      'banco': banco,
+      if (id != null) 'id': id,
+      'usuario_id': usuarioId,
+      'nome_banco': nomeBanco,
+      'tipo_conta': tipoConta,
       'saldo': saldo,
-      'dataCriacao': dataCriacao.toIso8601String(),
     };
   }
 
-  // Cria ContaBancaria a partir de Map
+  // Cria ContaBancaria a partir de Map (do SQLite)
   factory ContaBancaria.fromMap(Map<String, dynamic> map) {
     return ContaBancaria(
       id: map['id'],
-      userId: map['userId'],
-      nome: map['nome'],
-      banco: map['banco'],
-      saldo: map['saldo'].toDouble(),
-      dataCriacao: DateTime.parse(map['dataCriacao']),
+      usuarioId: map['usuario_id'],
+      nomeBanco: map['nome_banco'],
+      tipoConta: map['tipo_conta'],
+      saldo: (map['saldo'] as num).toDouble(),
     );
   }
 
@@ -54,19 +49,21 @@ class ContaBancaria {
   ContaBancaria copyWith({double? novoSaldo}) {
     return ContaBancaria(
       id: id,
-      userId: userId,
-      nome: nome,
-      banco: banco,
+      usuarioId: usuarioId,
+      nomeBanco: nomeBanco,
+      tipoConta: tipoConta,
       saldo: novoSaldo ?? saldo,
-      dataCriacao: dataCriacao,
     );
   }
 
   // Getter para saldo formatado no padrão brasileiro
   String get saldoFormatado => MoedaUtils.formatarMoeda(saldo);
 
+  // Getter para nome completo
+  String get nomeCompleto => '$nomeBanco - $tipoConta';
+
   @override
   String toString() {
-    return 'ContaBancaria{id: $id, nome: $nome, banco: $banco, saldo: $saldoFormatado}';
+    return 'ContaBancaria{id: $id, nomeBanco: $nomeBanco, tipoConta: $tipoConta, saldo: $saldoFormatado}';
   }
 }

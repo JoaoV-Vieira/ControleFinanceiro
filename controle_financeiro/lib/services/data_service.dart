@@ -1,96 +1,141 @@
 import '../models/user.dart';
 import '../models/conta_bancaria.dart';
 import '../models/transacao.dart';
+import 'database_helper.dart';
 
-// Serviço simples para gerenciar dados em memória
-// Na Etapa 2, será substituído por integração com banco de dados
+// Serviço para gerenciar dados usando SQLite
 class DataService {
   static final DataService _instance = DataService._internal();
   factory DataService() => _instance;
   DataService._internal();
 
-  // Dados em memória
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   User? _usuarioAtual;
-  final List<ContaBancaria> _contas = [];
-  final List<Transacao> _transacoes = [];
 
   // Getters
   User? get usuarioAtual => _usuarioAtual;
-  List<ContaBancaria> get contas => List.unmodifiable(_contas);
-  List<Transacao> get transacoes => List.unmodifiable(_transacoes);
 
-  // Métodos para usuário
+  // ========== MÉTODOS DE USUÁRIO ==========
+  
+  Future<bool> cadastrarUsuario(User usuario) async {
+    try {
+      await _dbHelper.inserirUsuario(usuario);
+      return true;
+    } catch (e) {
+      return false; // Email já existe ou outro erro
+    }
+  }
+
+  Future<bool> loginUsuario(String email, String senha) async {
+    final usuario = await _dbHelper.buscarUsuarioPorEmail(email);
+    if (usuario != null && usuario.senha == senha) {
+      _usuarioAtual = usuario;
+      return true;
+    }
+    return false;
+  }
+
   void setUsuario(User usuario) {
     _usuarioAtual = usuario;
   }
 
-  // Métodos para contas
-  void adicionarConta(ContaBancaria conta) {
-    _contas.add(conta);
+  void logout() {
+    _usuarioAtual = null;
   }
 
-  void atualizarSaldoConta(String contaId, double novoSaldo) {
-    final index = _contas.indexWhere((c) => c.id == contaId);
-    if (index != -1) {
-      _contas[index] = _contas[index].copyWith(novoSaldo: novoSaldo);
-    }
-  }
-
-  ContaBancaria? getContaPorId(String contaId) {
+  // ========== MÉTODOS DE CONTA BANCÁRIA ==========
+  
+  Future<bool> adicionarConta(ContaBancaria conta) async {
     try {
-      return _contas.firstWhere((c) => c.id == contaId);
+      await _dbHelper.inserirContaBancaria(conta);
+      return true;
     } catch (e) {
-      return null;
+      return false;
     }
   }
 
-  // Métodos para transações
-  void adicionarTransacao(Transacao transacao) {
-    _transacoes.add(transacao);
-    
-    // Atualizar saldo da conta automaticamente
-    final conta = getContaPorId(transacao.contaId);
-    if (conta != null) {
-      final novoSaldo = transacao.isEntrada 
-          ? conta.saldo + transacao.valor
-          : conta.saldo - transacao.valor;
-      atualizarSaldoConta(transacao.contaId, novoSaldo);
+  Future<List<ContaBancaria>> get contas async {
+    return await _dbHelper.listarContasBancarias();
+  }
+
+  Future<void> atualizarSaldoConta(int contaId, double novoSaldo) async {
+    await _dbHelper.atualizarSaldoConta(contaId, novoSaldo);
+  }
+
+  Future<ContaBancaria?> getContaPorId(int contaId) async {
+    return await _dbHelper.buscarContaPorId(contaId);
+  }
+
+  // ========== MÉTODOS DE TRANSAÇÃO ==========
+  
+  Future<bool> adicionarTransacao(Transacao transacao) async {
+    try {
+      await _dbHelper.inserirTransacao(transacao);
+      
+      // Atualizar saldo da conta automaticamente
+      final conta = await getContaPorId(transacao.contaId);
+      if (conta != null) {
+        final novoSaldo = transacao.isEntrada 
+            ? conta.saldo + transacao.valor
+            : conta.saldo - transacao.valor;
+        await atualizarSaldoConta(transacao.contaId, novoSaldo);
+      }
+      
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
-  // Cálculos financeiros
-  double get saldoTotal {
-    return _contas.fold(0.0, (total, conta) => total + conta.saldo);
+  Future<List<Transacao>> get transacoes async {
+    return await _dbHelper.listarTransacoes();
   }
 
-  double getEntradasMes([DateTime? mes]) {
+  Future<List<Transacao>> getTransacoesPorConta(int contaId) async {
+    return await _dbHelper.listarTransacoesPorConta(contaId);
+  }
+
+  // ========== CÁLCULOS FINANCEIROS ==========
+  
+  Future<double> get saldoTotal async {
+    final contasList = await contas;
+    return contasList.fold<double>(0.0, (total, conta) => total + conta.saldo);
+  }
+
+  Future<double> getEntradasMes([DateTime? mes]) async {
     final data = mes ?? DateTime.now();
     final inicioMes = DateTime(data.year, data.month, 1);
     final fimMes = DateTime(data.year, data.month + 1, 0);
     
-    return _transacoes
+    final todasTransacoes = await transacoes;
+    return todasTransacoes
         .where((t) => t.tipo == TipoTransacao.entrada && 
                      t.data.isAfter(inicioMes.subtract(const Duration(days: 1))) &&
                      t.data.isBefore(fimMes.add(const Duration(days: 1))))
-        .fold(0.0, (total, t) => total + t.valor);
+        .fold<double>(0.0, (total, t) => total + t.valor);
   }
 
-  double getSaidasMes([DateTime? mes]) {
+  Future<double> getSaidasMes([DateTime? mes]) async {
     final data = mes ?? DateTime.now();
     final inicioMes = DateTime(data.year, data.month, 1);
     final fimMes = DateTime(data.year, data.month + 1, 0);
     
-    return _transacoes
+    final todasTransacoes = await transacoes;
+    return todasTransacoes
         .where((t) => t.tipo == TipoTransacao.saida && 
                      t.data.isAfter(inicioMes.subtract(const Duration(days: 1))) &&
                      t.data.isBefore(fimMes.add(const Duration(days: 1))))
-        .fold(0.0, (total, t) => total + t.valor);
+        .fold<double>(0.0, (total, t) => total + t.valor);
   }
 
-  // Método para limpar todos os dados (útil para testes)
-  void limparDados() {
+  // ========== MÉTODOS AUXILIARES ==========
+  
+  Future<void> limparDados() async {
     _usuarioAtual = null;
-    _contas.clear();
-    _transacoes.clear();
+    await _dbHelper.limparTodosBancoDados();
+  }
+
+  Future<void> fecharBanco() async {
+    await _dbHelper.fecharBanco();
   }
 }

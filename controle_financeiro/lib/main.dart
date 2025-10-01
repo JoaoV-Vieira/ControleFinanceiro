@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'services/database_helper.dart';
 import 'screens/login_screen.dart';
 import 'screens/cadastro_usuario_screen.dart';
 import 'screens/cadastro_conta_screen.dart';
 import 'screens/transacoes_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar o banco de dados
+  await DatabaseHelper().database;
+  
   runApp(const ControleFinanceiroApp());
 }
 

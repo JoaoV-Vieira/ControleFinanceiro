@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/transacao.dart';
 import '../models/conta_bancaria.dart';
+import '../services/data_service.dart';
 import '../utils/moeda_utils.dart';
 import '../utils/moeda_input_formatter.dart';
 
@@ -22,7 +23,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
   final _valorController = TextEditingController();
 
   TipoTransacao _tipoTransacao = TipoTransacao.saida;
-  String? _contaSelecionada;
+  int? _contaSelecionada;
   String? _categoriaSelecionada;
   DateTime _dataSelecionada = DateTime.now();
 
@@ -84,18 +85,32 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
     }
   }
 
-  void _salvarTransacao() {
+  void _salvarTransacao() async {
     if (_formKey.currentState!.validate()) {
       final transacao = Transacao.nova(
         contaId: _contaSelecionada!,
         descricao: _descricaoController.text.trim(),
         valor: MoedaUtils.stringParaDouble(_valorController.text) ?? 0.0,
         tipo: _tipoTransacao,
-        categoria: _categoriaSelecionada ?? _categorias.first,
         data: _dataSelecionada,
       );
 
-      Navigator.pop(context, transacao);
+      // Salvar no banco de dados
+      final dataService = DataService();
+      final sucesso = await dataService.adicionarTransacao(transacao);
+
+      if (mounted) {
+        if (sucesso) {
+          Navigator.pop(context, transacao);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erro ao salvar transação'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -229,8 +244,8 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
               const SizedBox(height: 16),
 
               // Dropdown Conta
-              DropdownButtonFormField<String>(
-                initialValue: _contaSelecionada,
+              DropdownButtonFormField<int>(
+                value: _contaSelecionada,
                 decoration: const InputDecoration(
                   labelText: 'Conta',
                   prefixIcon: Icon(Icons.account_balance),
@@ -239,7 +254,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
                 items: widget.contas.map((conta) {
                   return DropdownMenuItem(
                     value: conta.id,
-                    child: Text('${conta.nome} (${conta.banco})'),
+                    child: Text('${conta.nomeBanco} (${conta.tipoConta})'),
                   );
                 }).toList(),
                 onChanged: (value) {
