@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart';
 import '../services/data_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -31,33 +30,50 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      // Simular delay de autenticação
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Por enquanto, aceitar qualquer login válido
-      // Na Etapa 2, validaremos com dados salvos
-      final usuario = User.novo(
-        nome: 'Usuário Demo',
-        email: _emailController.text.trim(),
-        senha: _senhaController.text,
-      );
-
-      _dataService.setUsuario(usuario);
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login realizado com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
+      try {
+        // Tentar fazer login com dados do banco
+        final sucesso = await _dataService.loginUsuario(
+          _emailController.text.trim(),
+          _senhaController.text,
         );
 
-        // Navegar para tela principal
-        Navigator.pushReplacementNamed(context, '/transacoes');
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          if (sucesso) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login realizado com sucesso!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Navegar para tela principal
+            Navigator.pushReplacementNamed(context, '/transacoes');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email ou senha incorretos!'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao fazer login: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

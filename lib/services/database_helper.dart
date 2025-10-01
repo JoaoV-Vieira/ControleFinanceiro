@@ -138,6 +138,34 @@ class DatabaseHelper {
     return null;
   }
 
+  Future<void> atualizarConta(ContaBancaria conta) async {
+    final db = await database;
+    await db.update(
+      'contas_bancarias',
+      conta.toMap(),
+      where: 'id = ?',
+      whereArgs: [conta.id],
+    );
+  }
+
+  Future<void> excluirConta(int contaId) async {
+    final db = await database;
+    
+    // Excluir primeiro as transações relacionadas
+    await db.delete(
+      'transacoes',
+      where: 'conta_id = ?',
+      whereArgs: [contaId],
+    );
+    
+    // Depois excluir a conta
+    await db.delete(
+      'contas_bancarias',
+      where: 'id = ?',
+      whereArgs: [contaId],
+    );
+  }
+
   // ========== OPERAÇÕES DE TRANSAÇÃO ==========
   
   Future<int> inserirTransacao(Transacao transacao) async {
@@ -162,6 +190,40 @@ class DatabaseHelper {
       whereArgs: [contaId],
       orderBy: 'data DESC',
     );
+    return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
+  }
+
+  // ========== OPERAÇÕES FILTRADAS POR USUÁRIO ==========
+  
+  Future<List<ContaBancaria>> listarContasPorUsuario(int usuarioId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'contas_bancarias',
+      where: 'usuario_id = ?',
+      whereArgs: [usuarioId],
+    );
+    return List.generate(maps.length, (i) => ContaBancaria.fromMap(maps[i]));
+  }
+
+  Future<List<Transacao>> listarTransacoesPorUsuario(int usuarioId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT t.* FROM transacoes t
+      INNER JOIN contas_bancarias c ON t.conta_id = c.id
+      WHERE c.usuario_id = ?
+      ORDER BY t.data DESC
+    ''', [usuarioId]);
+    return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
+  }
+
+  Future<List<Transacao>> listarTransacoesPorContaEUsuario(int contaId, int usuarioId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT t.* FROM transacoes t
+      INNER JOIN contas_bancarias c ON t.conta_id = c.id
+      WHERE t.conta_id = ? AND c.usuario_id = ?
+      ORDER BY t.data DESC
+    ''', [contaId, usuarioId]);
     return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
   }
 

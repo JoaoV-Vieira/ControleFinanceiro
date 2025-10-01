@@ -20,10 +20,68 @@ class _TransacoesScreenState extends State<TransacoesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Controle Financeiro'),
+        title: FutureBuilder<String>(
+          future: _getNomeUsuario(),
+          builder: (context, snapshot) {
+            final nome = snapshot.data ?? 'Controle Financeiro';
+            return Text('Olá, $nome!');
+          },
+        ),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 2,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (String value) {
+              switch (value) {
+                case 'nova_conta':
+                  _irParaCadastrarConta();
+                  break;
+                case 'gerenciar_contas':
+                  _irParaGerenciarContas();
+                  break;
+                case 'logout':
+                  _fazerLogout();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: 'nova_conta',
+                  child: Row(
+                    children: [
+                      Icon(Icons.add_card, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Text('Nova Conta'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'gerenciar_contas',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Gerenciar Contas'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.exit_to_app, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Sair'),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _carregarDadosCompletos(),
@@ -318,5 +376,59 @@ class _TransacoesScreenState extends State<TransacoesScreen> {
         );
       },
     );
+  }
+
+  Future<String> _getNomeUsuario() async {
+    final usuario = _dataService.usuarioAtual;
+    return usuario?.nome ?? 'Usuário';
+  }
+
+  void _irParaCadastrarConta() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CadastroContaScreen(),
+      ),
+    ).then((_) {
+      // Atualizar a tela quando voltar
+      setState(() {});
+    });
+  }
+
+  void _fazerLogout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Sair'),
+          content: const Text('Deseja realmente sair?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _dataService.logout();
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Sair'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _irParaGerenciarContas() {
+    Navigator.pushNamed(context, '/gerenciar-contas').then((_) {
+      // Atualizar a tela quando voltar
+      setState(() {});
+    });
   }
 }

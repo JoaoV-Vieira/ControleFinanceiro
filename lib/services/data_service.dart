@@ -55,7 +55,8 @@ class DataService {
   }
 
   Future<List<ContaBancaria>> get contas async {
-    return await _dbHelper.listarContasBancarias();
+    if (_usuarioAtual?.id == null) return [];
+    return await _dbHelper.listarContasPorUsuario(_usuarioAtual!.id!);
   }
 
   Future<void> atualizarSaldoConta(int contaId, double novoSaldo) async {
@@ -64,6 +65,24 @@ class DataService {
 
   Future<ContaBancaria?> getContaPorId(int contaId) async {
     return await _dbHelper.buscarContaPorId(contaId);
+  }
+
+  Future<bool> atualizarConta(ContaBancaria conta) async {
+    try {
+      await _dbHelper.atualizarConta(conta);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> excluirConta(int contaId) async {
+    try {
+      await _dbHelper.excluirConta(contaId);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   // ========== MÉTODOS DE TRANSAÇÃO ==========
@@ -88,7 +107,8 @@ class DataService {
   }
 
   Future<List<Transacao>> get transacoes async {
-    return await _dbHelper.listarTransacoes();
+    if (_usuarioAtual?.id == null) return [];
+    return await _dbHelper.listarTransacoesPorUsuario(_usuarioAtual!.id!);
   }
 
   Future<List<Transacao>> getTransacoesPorConta(int contaId) async {

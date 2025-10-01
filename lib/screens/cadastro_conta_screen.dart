@@ -47,12 +47,24 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
 
   void _adicionarConta() async {
     if (_formKey.currentState!.validate()) {
+      // Verificar se há usuário logado
+      final usuarioLogado = _dataService.usuarioAtual;
+      if (usuarioLogado?.id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro: Usuário não está logado'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final nomeBanco = _mostrarCampoOutroBanco 
           ? _bancoController.text.trim() 
           : _bancoSelecionado!;
       
       final conta = ContaBancaria.nova(
-        usuarioId: 1, // Por enquanto um ID fixo
+        usuarioId: usuarioLogado!.id!, // ID do usuário logado
         nomeBanco: nomeBanco,
         tipoConta: _nomeController.text.trim(),
         saldo: MoedaUtils.stringParaDouble(_saldoController.text) ?? 0.0,

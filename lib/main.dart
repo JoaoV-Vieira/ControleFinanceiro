@@ -4,6 +4,7 @@ import 'screens/login_screen.dart';
 import 'screens/cadastro_usuario_screen.dart';
 import 'screens/cadastro_conta_screen.dart';
 import 'screens/transacoes_screen.dart';
+import 'screens/gerenciar_contas_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,7 @@ class ControleFinanceiroApp extends StatelessWidget {
         '/cadastro': (context) => const CadastroUsuarioScreen(),
         '/contas': (context) => const CadastroContaScreen(),
         '/transacoes': (context) => const TransacoesScreen(),
+        '/gerenciar-contas': (context) => const GerenciarContasScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
