@@ -74,7 +74,7 @@ class DatabaseHelper {
     ''');
   }
 
-  // ========== OPERAÇÕES DE USUÁRIO ==========
+  // ========== OPERAÇÕES DE USUÁRIO ========== //
   
   Future<int> inserirUsuario(User usuario) async {
     final db = await database;
@@ -83,11 +83,10 @@ class DatabaseHelper {
 
   Future<User?> buscarUsuarioPorEmail(String email) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'usuarios',
-      where: 'email = ?',
-      whereArgs: [email],
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT usu.* FROM usuarios usu 
+      WHERE usu.email = ?
+    ''', [email]);
 
     if (maps.isNotEmpty) {
       return User.fromMap(maps.first);
@@ -101,7 +100,7 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) => User.fromMap(maps[i]));
   }
 
-  // ========== OPERAÇÕES DE CONTA BANCÁRIA ==========
+  // ========== OPERAÇÕES DE CONTA BANCÁRIA ========== //
   
   Future<int> inserirContaBancaria(ContaBancaria conta) async {
     final db = await database;
@@ -126,11 +125,10 @@ class DatabaseHelper {
 
   Future<ContaBancaria?> buscarContaPorId(int id) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'contas_bancarias',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT con.* FROM contas_bancarias con 
+      WHERE con.id = ?
+    ''', [id]);
 
     if (maps.isNotEmpty) {
       return ContaBancaria.fromMap(maps.first);
@@ -166,7 +164,7 @@ class DatabaseHelper {
     );
   }
 
-  // ========== OPERAÇÕES DE TRANSAÇÃO ==========
+  // ========== OPERAÇÕES DE TRANSAÇÃO ========== //
   
   Future<int> inserirTransacao(Transacao transacao) async {
     final db = await database;
@@ -193,25 +191,25 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
   }
 
-  // ========== OPERAÇÕES FILTRADAS POR USUÁRIO ==========
+  // ========== OPERAÇÕES FILTRADAS POR USUÁRIO ========== //
   
   Future<List<ContaBancaria>> listarContasPorUsuario(int usuarioId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'contas_bancarias',
-      where: 'usuario_id = ?',
-      whereArgs: [usuarioId],
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT con.* FROM contas_bancarias con 
+      WHERE con.usuario_id = ?
+      ORDER BY con.nome_banco
+    ''', [usuarioId]);
     return List.generate(maps.length, (i) => ContaBancaria.fromMap(maps[i]));
   }
 
   Future<List<Transacao>> listarTransacoesPorUsuario(int usuarioId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT t.* FROM transacoes t
-      INNER JOIN contas_bancarias c ON t.conta_id = c.id
-      WHERE c.usuario_id = ?
-      ORDER BY t.data DESC
+      SELECT tra.* FROM transacoes tra
+      INNER JOIN contas_bancarias con ON tra.conta_id = con.id
+      WHERE con.usuario_id = ?
+      ORDER BY tra.data DESC
     ''', [usuarioId]);
     return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
   }
@@ -219,20 +217,112 @@ class DatabaseHelper {
   Future<List<Transacao>> listarTransacoesPorContaEUsuario(int contaId, int usuarioId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT t.* FROM transacoes t
-      INNER JOIN contas_bancarias c ON t.conta_id = c.id
-      WHERE t.conta_id = ? AND c.usuario_id = ?
-      ORDER BY t.data DESC
+      SELECT tra.* FROM transacoes tra
+      INNER JOIN contas_bancarias con ON tra.conta_id = con.id
+      WHERE tra.conta_id = ? AND con.usuario_id = ?
+      ORDER BY tra.data DESC
     ''', [contaId, usuarioId]);
     return List.generate(maps.length, (i) => Transacao.fromMap(maps[i]));
   }
+  
+  // Buscar resumo financeiro do usuário (total em contas + últimas transações)
+  Future<Map<String, dynamic>> buscarResumoFinanceiroUsuario(int usuarioId) async {
+    final db = await database;
+    
+    final saldoTotal = await db.rawQuery('''
+      SELECT COALESCE(SUM(con.saldo), 0.0) as total_saldo
+      FROM contas_bancarias con
+      WHERE con.usuario_id = ?
+    ''', [usuarioId]);
+    
+    final ultimaTransacao = await db.rawQuery('''
+      SELECT tra.*, con.nome_banco, con.tipo_conta
+      FROM transacoes tra
+      INNER JOIN contas_bancarias con ON tra.conta_id = con.id
+      WHERE con.usuario_id = ?
+      ORDER BY tra.data DESC
+      LIMIT 1
+    ''', [usuarioId]);
+    
+    final contTransacoes = await db.rawQuery('''
+      SELECT COUNT(*) as total_transacoes
+      FROM transacoes tra
+      INNER JOIN contas_bancarias con ON tra.conta_id = con.id
+      WHERE con.usuario_id = ? AND tra.data LIKE ?
+    ''', [usuarioId, '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}%']);
+    
+    return {
+      'saldo_total': saldoTotal.first['total_saldo'] ?? 0.0,
+      'ultima_transacao': ultimaTransacao.isNotEmpty ? ultimaTransacao.first : null,
+      'transacoes_mes': contTransacoes.first['total_transacoes'] ?? 0,
+    };
+  }
+  
+  // Buscar contas com saldos e quantidade de transações
+  Future<List<Map<String, dynamic>>> buscarContasComResumo(int usuarioId) async {
+    final db = await database;
+    final maps = await db.rawQuery('''
+      SELECT 
+        con.id,
+        con.nome_banco,
+        con.tipo_conta,
+        con.saldo,
+        con.usuario_id,
+        COUNT(tra.id) as total_transacoes,
+        COALESCE(MAX(tra.data), '') as ultima_movimentacao
+      FROM contas_bancarias con
+      LEFT JOIN transacoes tra ON con.id = tra.conta_id
+      WHERE con.usuario_id = ?
+      GROUP BY con.id, con.nome_banco, con.tipo_conta, con.saldo, con.usuario_id
+      ORDER BY con.nome_banco
+    ''', [usuarioId]);
+    
+    return maps;
+  }
+  
+  // Buscar transações com detalhes da conta
+  Future<List<Map<String, dynamic>>> buscarTransacoesDetalhadas(int usuarioId, {int? limit}) async {
+    final db = await database;
+    String limitClause = limit != null ? 'LIMIT $limit' : '';
+    
+    final maps = await db.rawQuery('''
+      SELECT 
+        tra.id,
+        tra.tipo,
+        tra.valor,
+        tra.descricao,
+        tra.data,
+        tra.conta_id,
+        con.nome_banco,
+        con.tipo_conta
+      FROM transacoes tra
+      INNER JOIN contas_bancarias con ON tra.conta_id = con.id
+      WHERE con.usuario_id = ?
+      ORDER BY tra.data DESC
+      $limitClause
+    ''', [usuarioId]);
+    
+    return maps;
+  }
+  
+  // Validar se usuário pode acessar conta
+  Future<bool> validarAcessoConta(int usuarioId, int contaId) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT COUNT(*) as pode_acessar
+      FROM contas_bancarias con
+      WHERE con.id = ? AND con.usuario_id = ?
+    ''', [contaId, usuarioId]);
+    
+    return (result.first['pode_acessar'] as int) > 0;
+  }
 
-  // ========== OPERAÇÕES AUXILIARES ==========
+  // ========== OPERAÇÕES AUXILIARES ========== //
   
   Future<void> limparTodosBancoDados() async {
     final db = await database;
     await db.delete('transacoes');
-    await db.delete('contas_bancarias');
+    await db.delete('contas_bancarias'); 
     await db.delete('usuarios');
   }
 

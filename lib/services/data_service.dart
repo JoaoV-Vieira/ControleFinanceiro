@@ -3,7 +3,7 @@ import '../models/conta_bancaria.dart';
 import '../models/transacao.dart';
 import 'database_helper.dart';
 
-// Serviço para gerenciar dados usando SQLite
+// Gerenciar SQLite
 class DataService {
   static final DataService _instance = DataService._internal();
   factory DataService() => _instance;
@@ -15,7 +15,7 @@ class DataService {
   // Getters
   User? get usuarioAtual => _usuarioAtual;
 
-  // ========== MÉTODOS DE USUÁRIO ==========
+  // ========== MÉTODOS DE USUÁRIO ========== //
   
   Future<bool> cadastrarUsuario(User usuario) async {
     try {
@@ -43,7 +43,7 @@ class DataService {
     _usuarioAtual = null;
   }
 
-  // ========== MÉTODOS DE CONTA BANCÁRIA ==========
+  // ========== MÉTODOS DE CONTA BANCÁRIA ========== //
   
   Future<bool> adicionarConta(ContaBancaria conta) async {
     try {
@@ -85,7 +85,7 @@ class DataService {
     }
   }
 
-  // ========== MÉTODOS DE TRANSAÇÃO ==========
+  // ========== MÉTODOS DE TRANSAÇÃO ========== //
   
   Future<bool> adicionarTransacao(Transacao transacao) async {
     try {
@@ -115,7 +115,7 @@ class DataService {
     return await _dbHelper.listarTransacoesPorConta(contaId);
   }
 
-  // ========== CÁLCULOS FINANCEIROS ==========
+  // ========== CÁLCULOS FINANCEIROS ========== //
   
   Future<double> get saldoTotal async {
     final contasList = await contas;
@@ -148,7 +148,7 @@ class DataService {
         .fold<double>(0.0, (total, t) => total + t.valor);
   }
 
-  // ========== MÉTODOS AUXILIARES ==========
+  // ========== MÉTODOS AUXILIARES ========== //
   
   Future<void> limparDados() async {
     _usuarioAtual = null;

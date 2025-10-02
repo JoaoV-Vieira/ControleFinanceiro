@@ -18,19 +18,13 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
   final _saldoController = TextEditingController();
   final DataService _dataService = DataService();
 
-  // Lista de bancos populares (pode ser expandida)
   final List<String> _bancos = [
+    'Banco do Enriquecimento Fácil',
     'Banco do Brasil',
     'Caixa Econômica Federal',
-    'Itaú',
     'Bradesco',
     'Santander',
     'Nubank',
-    'Inter',
-    'C6 Bank',
-    'BTG Pactual',
-    'Sicoob',
-    'Sicredi',
     'Outro'
   ];
 
@@ -70,7 +64,6 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
         saldo: MoedaUtils.stringParaDouble(_saldoController.text) ?? 0.0,
       );
 
-      // Adicionar usando o serviço
       final sucesso = await _dataService.adicionarConta(conta);
 
       if (mounted) {
@@ -81,8 +74,7 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          // Navegar para tela de transações
-          Navigator.pushReplacementNamed(context, '/transacoes');
+          Navigator.pushReplacementNamed(context, '/transacoes'); // Ir para tela Transações
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -136,7 +128,7 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
               const SizedBox(height: 10),
               
               const Text(
-                'Configure sua primeira conta bancária para começar a controlar suas finanças',
+                'Cadastre primeiro uma conta bancária para adicionar uma transação',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -165,7 +157,7 @@ class _CadastroContaScreenState extends State<CadastroContaScreen> {
               
               const SizedBox(height: 16),
 
-              // Dropdown Banco
+              // Dropdown Bancos
               DropdownButtonFormField<String>(
                 initialValue: _bancoSelecionado,
                 decoration: const InputDecoration(

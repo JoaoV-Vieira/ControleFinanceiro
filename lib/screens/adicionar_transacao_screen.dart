@@ -30,10 +30,8 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
   // Categorias para entradas e saídas
   final List<String> _categoriasEntrada = [
     'Salário',
-    'Freelance',
     'Investimentos',
-    'Vendas',
-    'Presente',
+    'Tigrinho',
     'Outros'
   ];
 
@@ -42,10 +40,8 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
     'Transporte',
     'Moradia',
     'Saúde',
-    'Educação',
-    'Lazer',
     'Compras',
-    'Contas',
+    'Tigrinho',
     'Outros'
   ];
 
@@ -74,7 +70,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
     final data = await showDatePicker(
       context: context,
       initialDate: _dataSelecionada,
-      firstDate: DateTime(2020),
+      firstDate: DateTime(2024),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
@@ -191,7 +187,7 @@ class _AdicionarTransacaoScreenState extends State<AdicionarTransacaoScreen> {
                 controller: _descricaoController,
                 decoration: const InputDecoration(
                   labelText: 'Descrição',
-                  hintText: 'Ex: Almoço no restaurante',
+                  hintText: 'Ex: Gelada no barzinho',
                   prefixIcon: Icon(Icons.description),
                   border: OutlineInputBorder(),
                 ),

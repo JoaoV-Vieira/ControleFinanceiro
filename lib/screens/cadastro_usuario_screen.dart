@@ -69,7 +69,7 @@ class _CadastroUsuarioScreenState extends State<CadastroUsuarioScreen> {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Erro ao cadastrar usuário. Email já pode estar em uso.'),
+                content: Text('Email já cadastrado. Erro ao cadastrar usuário.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -159,7 +159,7 @@ class _CadastroUsuarioScreenState extends State<CadastroUsuarioScreen> {
                       return 'Por favor, informe seu nome';
                     }
                     if (value.trim().length < 2) {
-                      return 'Nome deve ter pelo menos 2 caracteres';
+                      return 'Apelido não bicho, digita o nome completo aí';
                     }
                     return null;
                   },
@@ -251,7 +251,7 @@ class _CadastroUsuarioScreenState extends State<CadastroUsuarioScreen> {
                       return 'Por favor, confirme sua senha';
                     }
                     if (value != _senhaController.text) {
-                      return 'Senhas não coincidem';
+                      return 'As senhas preenchidas não são iguais';
                     }
                     return null;
                   },
